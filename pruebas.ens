@@ -1,0 +1,502 @@
+;
+;	Pruebas filtror
+;
+
+org 10000
+
+;
+; Pruebas a nFiltrados
+;
+
+; nF = 10 por defecto en el programa 
+
+PPAL:		LEA(r30,10000)		; Marco de pila
+			add r3,r0,-100		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+nFTEST1:	LEA(r30,10000)		; Marco de pila
+			add r3,r0,100		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+org 10100
+
+; Carga nF con -10
+			sub r2,r0,-10		;
+			st r2,r0,r0		;
+			or r2,r0,r0
+
+
+nFTEST2:		LEA(r30,10100)		; Marco de pila
+			add r3,r0,100		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+org 10200
+; Carga nF con 5
+			add r2,r0,5		;
+			st r2,r0,r0		;
+			or r2,r0,r0
+
+nFTEST3:		LEA(r30,10200)		; Marco de pila
+			add r3,r0,-100		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+org 10300
+; Carga nF con -4
+			sub r2,r0,-4	;
+			st r2,r0,r0		;
+			or r2,r0,r0
+
+nFTEST4:		LEA(r30,10300)		; Marco de pila
+			add r3,r0,-100		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+org 10400
+; Carga nF con 1000
+			add r2,r0,1000		;
+			st r2,r0,r0		;
+			or r2,r0,r0
+
+nFTEST5:	LEA(r30,10400)		; Marco de pila
+			add r3,r0,0		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+org 10500
+; Carga nF con -990
+			sub r2,r0,-990		;
+			st r2,r0,r0		;
+			or r2,r0,r0
+
+nFTEST6:	LEA(r30,10500)		; Marco de pila
+			add r3,r0,0		; r3 == oper
+			PUSH(r3)
+			bsr	nFiltrados
+			POP(r0)				; addu r30,r30,4
+			stop
+
+
+;
+; Pruebas a ActualizarFiltro
+;
+
+
+; Cambiando el numerador y denominador podemos obtener difernete resultados
+
+; Cabecera para pruebas
+IMG1: data 1,2,3,4,5,6,7,8,9
+NumDem: data 0,4
+IMG2: data 9,8,7,6,5,4,3,2,1
+
+; programa principal
+
+PPAL:		LEA(r30,10000)		; Marco de pila
+
+			LEA(r2,NumDem)
+			PUSH(r2)
+			LEA(r2,IMG1)
+			PUSH(r2)
+			
+			or r2,r0,r0
+			bsr ActualizarFiltro;
+
+			stop
+
+
+
+CODIGO DE SUBMATRIZ
+
+
+
+			ld r20,r30,0		; Puntero a Imagen
+			
+			ld r21,r30,0		; Puntero a Imagen, 1º fila
+			ld r22,r30,0		; Puntero a Imagen, 2º fila
+			ld r23,r30,0		; Puntero a Imagen, 3º fila
+
+			ld r24,r30,4		; Puntero a SubImg
+			ld r2,r30,8			; i
+			ld r3,r30,12		; j
+
+			ld r4,r20,0			; M
+			ld r5,r20,4			; N
+			addu r20,r20,8 		; Puntero a matriz Imagen.
+
+			; Obtener puntero al elemento central
+			mulu r6,r4,r2 		; M x i, desplazamiento en las filas
+			addu r20,r20,r6		; El puntero se desplazara tantas filas sean necesarias establecido por M x i
+			addu r20,r20,r3 	; El puntero se desplazara tantas columnas sean necesarias establecido por j
+			ld.bu r9,r20,0		; Elemento central cargado en un registro general
+			
+
+
+			or r10,r0,9			; Contador de 9 elementos
+
+			; Casos para el borde i = 0 o j = 0
+			cmp r7,r2,r0 		; ¿i = 0?
+			bb1 eq,r7,pixelBorde;
+			cmp r7,r3,r0    	; ¿j = 0?
+			bb1 eq,r7,pixelBorde;
+			
+			; Casos para el borde i = M - 1 o j = N - 1
+			subu r8,r4,1		; r6 = M - 1
+			cmp r7,r2,r8		; ¿r2 = M - 1?
+			bb1 eq,r7,pixelBorde;
+
+			subu r8,r5,1		; r6 = N - 1
+			cmp r7,r3,r8		; ¿r3 = N - 1?
+			bb1 eq,r7,pixelBorde;
+
+			; Llegado aqui se trataria de un pixel interno
+
+			; Obtener puntero al primero elemento 
+
+			subu r2,r2,1		; i - 1
+			subu r3,r3,1		; j - 1
+			mulu r6,r4,r2 		; M x i, desplazamiento en las filas
+			addu r21,r21,r6		; El puntero se desplazara tantas filas sean necesarias establecido por M x i
+			addu r21,r21,r3 	; El puntero se desplazara tantas columnas sean necesarias establecido por j
+
+			;****
+			;**** Esto esta completamente mal
+			sub r20,r20,4		; r20 apuntara al elemento central, por tanto, para llegar al 1º elemento
+								;	con restar 4, nos colocaremos en el primer elemento de la matriz 3x3
+								;	que se usara para el filtro
+			;****
+			;****
+
+pixelInt:	cmp r7,r6,r0 		;
+			bb1 eq,r7,finSubMa 	;
+			ld.bu r23,r20,r0 	; Paso intermedio para coger 1 elemento de la matriz
+			st.b r23,r21,r0 	; 
+			addu r20,r20,1		; Avanzamos puntero de Imagen
+			addu r22,r21,4		; Avanzamos puntero de Subimg
+			subu r10,r10,1		;
+			br pixelInt			;			
+
+
+pixelBorde:	cmp r7,r6,r0 		;
+			bb1 eq,r7,finSubMa	;
+			st r9,r24,0			; Se almacena el valor del pixel en la SubImg
+			
+			addu r24,r24,4		; Se avanza el puntero de SubImg
+			subu r10,r10,1		; Decrementamos el contador de elementos cargados
+			br pixelBorde
+			
+;***************************************
+;Matrices para ValorPixel
+;***************************************
+; VPixel = ValorPixel (SubImg , MFiltro)
+;
+;
+; MFiltro1 -->| 1 1 1 |
+;			  | 1 0 1 |
+; 			  | 1 1 1 |
+;
+; SubImg1 -->| 1 2 3 |
+;			 | 4 5 6 |
+;      		 | 7 8 9 |
+;
+
+MFiltro1: 	data 1,1,1,
+			 	 1,0,1,
+			 	 1,1,1
+
+SubImg1:	data 0x04030201,0x08070605,0x00000009
+		
+		;---------------------------;
+
+; MFiltro2 -->| 0 0 0 |
+;			  | 0 1 0 |
+; 			  | 0 0 0 |
+;
+; SubImg2 -->| 0 0  0 |
+;			 | 0 55 0 |
+;      		 | 0 0  0 |
+;
+
+MFiltro2: 	data 0,0,0,
+			 	 0,1,0,
+			 	 0,0,0
+
+SubImg2:	data 0x00000000,0x00000055,0x00
+
+; Resultado en r29 = 0x55, (85 decimal) 
+		
+		;---------------------------;
+
+; MFiltro3 -->| 0   0  0 |
+;			  | 0 -254 0 |
+; 			  | 0   0  0 |
+;
+; SubImg3 -->| 0 0  0 |
+;			 | 0 55 0 |
+;      		 | 0 0  0 |
+;
+
+MFiltro3: 	data 0,0,0,
+			 	 0,0xFFFFFFFE,0,
+			 	 0,0,0
+
+SubImg3:	data 0x00000000,0x00000055,0x00
+
+; Resultado en r29 = 0xFF FF FF 56, (-170 decimal)
+		
+		;---------------------------;
+
+; MFiltro4 -->| -254 -254 -254 |
+;			  | -254   0  -254 |
+; 			  | -254 -254 -254 |
+;
+; SubImg4 -->| 10 11 12|
+;			 | 13 14 15|
+;      		 | 16 17 18|
+;
+
+MFiltro4: 	data 0xFFFFFFFE,0xFFFFFFFE,0xFFFFFFFE,
+			 	 0xFFFFFFFE,0,0xFFFFFFFE,
+			 	 0xFFFFFFFE,0xFFFFFFFE,0xFFFFFFFE
+
+SubImg4:	data 0x13121110,0x17161514,0x18
+
+; Resultado en r29 = 0xFF FF FE C0, (-320 decimal)
+
+
+;***************************************
+;Matrices para SubMatriz
+;***************************************
+; SubMatriz ( Imagen, SubImg, i ,j)
+;
+;
+; SubMaImagen1  -->| 1 2 3 |
+;			 	   | 4 5 6 |
+;      		  	   | 7 8 9 |
+
+; SubMaSubImg1  -->| 0 0 0 |
+;			  	   | 0 0 0 |
+;      		       | 0 0 0 |
+;
+; i y j van desde 0 hasta X
+
+SubMaImagen1: 		data 3,3,0x04030201,0x08070605,0x00000009
+SubMaSubImg1:	data 0,0,0
+					,0,0,0
+					,0,0,0
+
+; La posicion [1,2] corresponde al 6
+
+i1:				data 1
+j1:				data 1
+
+		;---------------------------;
+
+; SubMaImagen2  -->| 1 2 3 4 5 |
+;			  	   | 2 6 7 8 4 |
+;             	   | 3 7 9 7 3 |
+;			  	   | 4 8 7 6 2 |
+;            	   | 5 4 3 2 1 |
+
+;
+; SubMaSubImg2  -->| 1 1 1 |
+;			       | 1 0 1 |
+;      		       | 1 1 1 |
+
+SubMaImagen2: 		data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
+SubMaSubImg2:	data 1,1,1
+					,1,0,1
+					,1,1,1
+
+; La posicion [2,2] corresponde al 9
+
+i2: 		data 2
+j2: 		data 2
+
+		;---------------------------;
+
+; SubMaImagen3  -->| 1 2 3 4 5 |
+;			  	   | 2 6 7 8 4 |
+;                  | 3 7 9 7 3 |
+;			       | 4 8 7 6 2 |
+;                  | 5 4 3 2 1 |
+
+;
+; SubMaSubImg3  -->| 1 1 1 |
+;			       | 1 0 1 |
+;      		       | 1 1 1 |
+
+SubMaImagen3: 		data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
+SubMaSubImg3:	data 1,1,1
+					,1,0,1
+					,1,1,1
+
+; La posicion [3,3] corresponde al 9
+
+i3: 		data 3
+j3: 		data 3
+
+		;---------------------------;
+
+; SubMaImagen4  -->| 10 20 30 |
+;			  	   | 40 50 60 |
+;      		 	   | 70 80 90 |  
+
+;
+; SubMaSubImg4  -->| -1 -1 -1 |
+;			       | -1 -1 -1 |
+;      		       | -1 -1 -1 |
+
+SubMaImagen4: data 3,3, 0x40302010, 0x08070605, 0x90
+SubMaSubImg4: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
+; La posicion [1,1] corresponde al 50
+
+i4: 		data 1
+j4: 		data 1
+
+; Resultado: Dir.Memoria --> 10203040 50607080 90FFFFFF
+
+		;---------------------------;
+
+; SubMaImagen5  -->| 01 02 03 04 05 |
+;			  	   | 06 07 08 09 0A |
+;      		 	   | 0B 0C 0D 0E 0F |  
+;				   | 10 11 12 13 14 |
+;				   | 15 16 17 18 19 |	
+;
+; SubMaSubImg5  -->| -1 -1 -1 |
+;			       | -1 -1 -1 |
+;      		       | -1 -1 -1 |     		       
+;
+;
+SubMaImagen5: data 5,5, 0x04030201, 0x08070605, 0x0C0B0A09,0x100F0E0D,0x14131211,0x18171615,0x19
+SubMaSubImg5: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
+; La posicion [4,4] corresponde al 19
+
+i5: 		data 4
+j5: 		data 4
+
+; Resultado: Dir.Memoria --> 19191919 19191919 19FFFFFF
+
+		;---------------------------;
+
+; SubMaImagen6  -->|  1  2  3  4  5  6  7  8|
+;			  	   |  9 10 11 12 13 14 15 16|
+;      		 	   | 17 18 19 20 21 22 23 24|  
+;				   | 25 26 27 28 29 30 31 32|
+;				   | 33 34 35 36 37 38 39 40|	
+;
+; SubMaSubImg6  -->| -1 -1 -1 |
+;			       | -1 -1 -1 |
+;      		       | -1 -1 -1 |     		       
+;
+;
+
+SubMaImagen6: data 5,8, 0x04030201, 0x08070605, 0x12111009, 0x16151413, 0x20191817, 0x24232221, 0x28272625
+					,0x32313029 , 0x36353433, 0x40393837
+SubMaSubImg6: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
+; La posicion [4,2] corresponde al 35
+
+i6: 		data 4
+j6: 		data 2
+
+; Resultado: Dir.Memoria --> 35353535 35353535 35FFFFFF 
+
+		;---------------------------;
+
+; SubMaImagen7  -->|  1  2  3  4  5  6  7  8|
+;			  	   |  9 10 11 12 13 14 15 16|
+;      		 	   | 17 18 19 20 21 22 23 24|  
+;				   | 25 26 27 28 29 30 31 32|
+;				   | 33 34 35 36 37 38 39 40|	
+;
+; SubMaSubImg7  -->| -1 -1 -1 |
+;			       | -1 -1 -1 |
+;      		       | -1 -1 -1 |     		       
+;
+;
+
+SubMaImagen7: data 5,8, 0x04030201, 0x08070605, 0x12111009, 0x16151413, 0x20191817, 0x24232221, 0x28272625
+					,0x32313029 , 0x36353433, 0x40393837
+SubMaSubImg7: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
+; La posicion [3,5] corresponde al 30
+
+i7: 		data 3
+j7: 		data 5
+
+; Resultado: Dir.Memoria --> 21222329 30313738 39FFFFFF 
+
+		;---------------------------;
+
+; SubMaImagen8  -->|  1  2  3  4  5  6  7  8|
+;			  	   |  9 10 11 12 13 14 15 16|
+;      		 	   | 17 18 19 20 21 22 23 24|  
+;				   | 25 26 27 28 29 30 31 32|
+;				   | 33 34 35 36 37 38 39 40|	
+;
+; SubMaSubImg8  -->| -1 -1 -1 |
+;			       | -1 -1 -1 |
+;      		       | -1 -1 -1 |     		       
+;
+;
+
+SubMaImagen8: data 5,8, 0x04030201, 0x08070605, 0x12111009, 0x16151413, 0x20191817, 0x24232221, 0x28272625
+					,0x32313029 , 0x36353433, 0x40393837
+SubMaSubImg8: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
+
+; La posicion [4,7] corresponde al 40
+
+i8: 		data 4
+j8: 		data 7
+
+; Resultado: Dir.Memoria --> 40404040 40404040 40FFFFFF 
+
+			
+;*****************************************************************************************;
+; Pruebas para FilPixel			
+;*****************************************************************************************;
+; VPixel = FilPixel (Imagen, i, j, MFiltro)
+
+; VPixel = FilPixel (Imagen, i, j, MFiltro)
+
+FilPImagen1:  data 3,3,0x04030201,0x08070605,0x00000009
+FilPMFiltro1: data 1,1,1,
+			 	   1,0,1,
+			 	   1,1,1
+
+; La posicion [1,2] corresponde al 6
+
+FilPi1:		data 1
+FilPj1:		data 2
+
+
+		;---------------------------;
+
+FilPImagen2:  data 5,5,0x44332211, 0x03020155, 0x22210504,0x31252423,
+					0x35343332,0x44434241,0x00000045
+FilPMFiltro2: data 0,0,0,
+			 	   0,1,0,
+			 	   0,0,0
+
+; La posicion [2,2] corresponde al 6
+
+FilPi2:		data 2
+FilPj2:		data 2
