@@ -9,54 +9,54 @@
 
 
 ;-----------------------------------------------------------------------------------------;
-;									NOTAS DE AUTOR 										  ;
+;									NOTAS DE AUTOR    ;
 ;-----------------------------------------------------------------------------------------;
-;																						  ;
-; * Las direcciones 0x00007000 hasta 0x00009000 estan reservadas 						  ;
-;	 para el programa corrector.														  ;
-; * Recomiendan guardar la pila en posiciones altas de memoria, por ejemplo				  ;
-;	 en la direccion 0x0000F000.														  ;
-; 																						  ;
+;											  ;											  ;
+; * Las direcciones 0x00007000 hasta 0x00009000 estan reservadas 			  ;
+;	 para el programa corrector.							  ;
+; * Recomiendan guardar la pila en posiciones altas de memoria, por ejemplo		  ;
+;	 en la direccion 0x0000F000.							  ;
+; 											  ;											  ;
 ;-----------------------------------------------------------------------------------------;
 ; Macros de la asignatura
 
 LEA:	MACRO  (ra, ETIQ)
-	         	or     ra, r0,  low(ETIQ)
-	          	or.u   ra, ra, high(ETIQ)
-	    ENDMACRO
+       	  or    ra, r0,  low(ETIQ)
+       	  or.u  ra, ra, high(ETIQ)
+    	ENDMACRO
 
 LOAD:	MACRO (ra, ETIQ)
-				LEA(ra,ETIQ)
-				ld ra,ra,0
-		ENDMACRO
+	  LEA  (ra,ETIQ)
+	  ld   ra,ra,0
+	ENDMACRO
 
 PUSH:	MACRO  (ra)
-	         	subu   r30, r30, 4
-	         	st     ra, r30, r0
-	    ENDMACRO
+	  subu   r30, r30, 4
+	  st     ra, r30, r0
+	ENDMACRO
 
 POP:	MACRO  (ra)
-        		ld     ra, r30, r0
-          		addu   r30, r30, 4
+          ld     ra, r30, r0
+          addu   r30, r30, 4
         ENDMACRO
 
 
 
 ; Variables estáticas y para pruebas
-org  		0
-nF: 		data 0
+org  0
+nF:  data 0
 
 
 ;-----------------------------------------------------------------------------------------;
-;										  PILA
+;				       PILA                                               ;
 ;-----------------------------------------------------------------------------------------;
-org		 	0x0000EA60		; Direccion de memoria 60.000
-PILA: 		data 0
+org 0x0000EA60	; Direccion de memoria 60.000
+PILA: data 0
 
 
 org 1000
 ;-----------------------------------------------------------------------------------------;
-;										NFILTRADOS
+;				    NFILTRADOS                                            ;
 ;-----------------------------------------------------------------------------------------;
 ; nF = nFiltrados(oper) 
 ; 
@@ -66,40 +66,40 @@ org 1000
 ;		B. Si ( oper <  0  --> nF = nF - 1 ) & nF nunca podra ser negativo.
 ;			return r29 = nF
 ;
-;			|			  |	
+;			|	      |	
 ;			|_____________|
-;			|	Dir.Ret	  |	<--- r30
+;			|   Dir.Ret   |	<--- r30
 ;			|_____________|
-;			|	 oper	  |	r30 + 4
-;			|	(valor)	  |
+;			|   oper      |	r30 + 4
+;			|  (valor)    |
 ;			|_____________|
 ;
 
 ; Registros usados --> r2,r3,r7
 
 nFiltrados:	PUSH(r1)
-			ld r2,r30,4			; r2 = oper
+			ld r2,r30,4		; r2 = oper
 			LOAD(r3,nF) 		; Se carga en r3 la variable nF
 			cmp r7,r2,r0 		; ¿ oper >= 0 ?
 			bb1 ge,r7,iniNF 	; Si oper >= 0, se inicializa nF, ecc se decrementa nF,
 			sub r3,r3,1 		;  ecc se decrementa nF
 			cmp r7,r3,r0 		;
 			bb1 lt,r7,nFaCero	; Si r3 < 0 , entonces nF = 0
-			br finNFil			;
+			br finNFil		;
 
 iniNF:		or r3,r2,r0			; Se carga el valor de r2(oper) en r3
-			br finNFil 			;
+			br finNFil 		;
 
-nFaCero:	or r3,r0,r0 		; El valor de r3 es negativo, por tanto, se convierte a 0
+nFaCero:	or r3,r0,r0 			; El valor de r3 es negativo, por tanto, se convierte a 0
 
-finNFil: 	or r29,r3,r3   		; Se carga el valor ha devolver en r29
+finNFil: 	or r29,r3,r3   			; Se carga el valor ha devolver en r29
 			st r3,r0,r0 		; Se carga el valor de r3 en nF. Dir.Inst (Dec) = 1060
 			POP(r1)
 			jmp(r1)
 
 
 ;-----------------------------------------------------------------------------------------;
-;										ACTUALIZAFILTRO
+;				ACTUALIZAFILTRO                                           ;
 ;-----------------------------------------------------------------------------------------;
 ; ActualizaFiltro(MFiltro, ModMFiltro)
 ; 
@@ -107,9 +107,9 @@ finNFil: 	or r29,r3,r3   		; Se carga el valor ha devolver en r29
 ; MFiltro es una matriz 3x3
 ; ModMFiltro es una dupla, (Numerador,Denominador)
 ;
-;			|			  |
+;			|	      |
 ;			|_____________|
-;			|	Dir.Ret	  | <--- r30
+;			|  Dir.Ret    | <--- r30
 ;			|_____________|
 ;			| Dir.MFiltro |	r30 + 4
 ;			|_____________|
@@ -124,21 +124,21 @@ ActualizaFiltro:	PUSH(r1)
 			ld r20,r30,4		; Puntero a MFiltro.
 			ld r21,r30,8		; Puntero a ModMFiltro.
 
-			ld r2,r21,0			; Numerador
-			ld r3,r21,4			; Denominador
+			ld r2,r21,0		; Numerador
+			ld r3,r21,4		; Denominador
 
 			mulu r4,r2,r3 		; Num x Denominador = r4
 			cmp r7,r4,r0 		; Si r4 != 0, entonces se puede actualizar la matriz en caso contrario,
-			bb1 eq,r7,finAcFil  ;  significaria que el Numerador o el Denominador es 0 y no se actualiza la matriz.
-			or r4,r0,9 			; r4 es un contador a 9 elementos de la matriz.
+			bb1 eq,r7,finAcFil  	;  significaria que el Numerador o el Denominador es 0 y no se actualiza la matriz.
+			or r4,r0,9 		; r4 es un contador a 9 elementos de la matriz.
 
 			; Bucle que recorre los 9 elementos de la matriz
-sigElemAcFil:	cmp r7,r4,r0 	; Si el contador ha llegado a 0 sale del bucle.
+sigElemAcFil:	cmp r7,r4,r0 			; Si el contador ha llegado a 0 sale del bucle.
 			bb1 eq,r7,finAcFil	;
-			ld r5,r20,0			; Cargo elemento de la matriz
+			ld r5,r20,0		; Cargo elemento de la matriz
 			muls r5,r5,r2 		; Elemento x Numerador = r5
 			divs r5,r5,r3    	; (Elemento x Numerador) / Denominador
-			st r5,r20,0			; Se almacena el dato.
+			st r5,r20,0		; Se almacena el dato.
 			addu r20,r20,4		; Se avanza el puntero.
 			subu r4,r4,1 		; Se resta 1 al contador.
 			br sigElemAcFil		; Siguiente iteraccion 
@@ -148,7 +148,7 @@ finAcFil:	POP(r1)
 
 
 ;-----------------------------------------------------------------------------------------;
-;										COMP
+;					COMP                                              ;
 ;-----------------------------------------------------------------------------------------;
 ; diferencia = Comp ( Imagen1, Imagen2)
 ; 
@@ -164,9 +164,9 @@ finAcFil:	POP(r1)
 ;		3. Dif = Dif / MxN
 ;		4. Devolver por r29 el contenido de diferencia
 ;
-;	        |			  |
+;	                |	      |
 ;			|_____________|
-;	        |	Dir.Ret	  | <--- r30
+;	                |   Dir.Ret   | <--- r30
 ;			|_____________|
 ;			|   Imagen1   |	r30 + 4
 ;			|_____________|
@@ -180,18 +180,18 @@ Comp: 		PUSH(r1)
 			ld r21,r30,4		; Puntero a Imagen 1
 			ld r22,r30,8		; Puntero a Imagen 2
 
-			ld r3,r21,0			; Imagen 1 M = Filas
-			ld r4,r21,4			; Imagen 1 N = Columna
+			ld r3,r21,0		; Imagen 1 M = Filas
+			ld r4,r21,4		; Imagen 1 N = Columna
 			addu r21,r21,8		; Avanzamos el puntero hasta la matriz
 			addu r22,r22,8		; Avanzamos el puntero hasta la matriz
 			mulu r5,r3,r4		; MxN = Total elementos
-			or r6,r5,r5			; Contador para el bucle
+			or r6,r5,r5		; Contador para el bucle
 
 			; Bucle
 sigElemComp:	cmp r7,r6,r0 	; r5 = Total elementos que faltan por leer 
 			bb1 eq,r7,finComp	;
 			ld.bu r11,r21,r0 	; Pixel de Imagen 1
-			ld.bu r12,r22,r0    ; Pixel de Imagen 2
+			ld.bu r12,r22,r0    	; Pixel de Imagen 2
 
 			subu r13,r11,r12 	; (PixelImg 1 - PixelImg 2) = Dif
 			mulu r13,r13,r13	; Dif^2
@@ -204,7 +204,7 @@ sigElemComp:	cmp r7,r6,r0 	; r5 = Total elementos que faltan por leer
 			br sigElemComp		; Siguiente iteraccion 
 
 
-finComp:	divu r29,r2,r5		; Dif/Total de elementos
+finComp:	divu r29,r2,r5			; Dif/Total de elementos
 			POP(r1)
 			jmp(r1)
 
@@ -234,9 +234,9 @@ finComp:	divu r29,r2,r5		; Dif/Total de elementos
 ;				de la matriz del filtro, acumulando el resultado sobre Acc.
 ;		4. Devolvera el control al programa llamante, dando como resultado en r29 el valor  Acc.
 ;
-;			| 			  |
+;			| 	      |
 ;			|_____________|
-;           | 	Dir.Ret	  | <--- r30
+;           		|  Dir.Ret    | <--- r30
 ;			|_____________|
 ;			| SubImg(Dir) |	r30 + 4
 ;			|_____________|
@@ -253,7 +253,7 @@ finComp:	divu r29,r2,r5		; Dif/Total de elementos
 
 ValorPixel:	PUSH(r1)
 			or r29,r0,r0 		; Acumulador Acc
-			or r2,r0,9			; Contador de 9 elementos
+			or r2,r0,9		; Contador de 9 elementos
 			ld r21,r30,4		; Puntero a SubImg
 			ld r22,r30,8		; Puntero a MFiltro
 
@@ -262,7 +262,7 @@ sigElemVPixel: cmp r7,r2,r0 	;
 			bb1 eq,r7,finVPixel	;
 			
 			ld.bu r4,r21,0		; Elemento de SubImg
-			ld r5,r22,0			; Elemento de MFiltro 
+			ld r5,r22,0		; Elemento de MFiltro 
 			muls r6,r4,r5		; Elemento SubImg x Elemento MFiltro
 			add r29,r29,r6		; Guardamos el resultado en el Acc
 
@@ -306,13 +306,13 @@ finVPixel:	POP(r1)
 ;			| (i+1,j-1) , (i+1,j) , (i+1,j+1) |
 ;			
 ;
-;			|			  |
+;			|	      |
 ;			|_____________|
-;			|	Dir.Ret	  | <--- r30
+;			|   Dir.Ret   | <--- r30
 ;			|_____________|
 ;			| Imagen(Dir) | r30 + 4
 ;			|_____________|
-;	        | SubImg(Dir) | r30 + 8
+;	        	| SubImg(Dir) | r30 + 8
 ;			|_____________|
 ;			|   i(Valor)  |	r30 + 12
 ;			|_____________|
@@ -335,8 +335,8 @@ SubMatriz:	PUSH(r1)
 			ld r2,r30,12 		; i
 			ld r3,r30,16		; j
 			ld r20,r30,4		; Puntero a Imagen (M,N, Matriz)
-			ld r4,r20,0			; M
-			ld r5,r20,4			; N
+			ld r4,r20,0		; M
+			ld r5,r20,4		; N
 			addu r20,r20,8		; Puntero al 1º elemento de la matriz de Imagen
 			or r21,r20,r20		; Copia de r20
 			ld r22,r30,8		; Puntero a Subimagen  (Dir = 1312)
@@ -365,8 +365,8 @@ SubMatriz:	PUSH(r1)
 			; 	en Subimagen
 			subu r2,r2,1		; i--
 			subu r3,r3,1 		; j--
-			or r8,r0,3			; 3 filas
-			or r9,r0,3			; 3 columnas
+			or r8,r0,3		; 3 filas
+			or r9,r0,3		; 3 columnas
 
 
 			addu r20,r20,r3 	; Desplazameinto en columnas
@@ -381,26 +381,26 @@ pixelIntDesp:	ld.bu r10,r21,0	; Cargamos el elemento que deseamos copiar
 			subu r9,r9,1		; Columnas--
 
 			cmp r7,r9,r0 		; ¿Se han recorrido 3 columnas ya?
-			bb1 ne,r7,pixelIntDesp; A. No. Repite bucle interno "pixelIntDesp"
-								;	B. Si. Sale bucle interno.
+			bb1 ne,r7,pixelIntDesp  ; 	A. No. Repite bucle interno "pixelIntDesp"
+						; 	B. Si. Sale bucle interno.
 
 			addu r2,r2,1		; i++
-			or r9,r0,3			; Restauramos el valor: r9 = 3
+			or r9,r0,3		; Restauramos el valor: r9 = 3
 			subu r8,r8,1		; filas--
 
 			cmp r7,r8,r0 		; ¿Se han recorrido 3 filas ya?
-			bb1 ne,r7,pixelInter; 	A. No. Repite bucle externo "pixelInter"
+			bb1 ne,r7,pixelInter	; 	A. No. Repite bucle externo "pixelInter"
 			br finSubMa 		;	B. Si, Sale bucle externo.
 
-pixelBorde: mulu r6,r5,r2 		; N x i, desplazamiento en las filas
+pixelBorde: mulu r6,r5,r2 			; N x i, desplazamiento en las filas
 			addu r21,r20,r6		; El puntero se desplazara tantas filas sean necesarias establecido por N x i
 			addu r21,r21,r3 	; El puntero se desplazara tantas columnas sean necesarias establecido por j
 			ld.bu r9,r21,0		; Elemento central cargado en un registro general
-			or r8,r0,9			; Contador de 9 elementos
+			or r8,r0,9		; Contador de 9 elementos
 
-bordeBucl:	cmp r7,r8,r0 	;
+bordeBucl:	cmp r7,r8,r0 			;
 			bb1 eq,r7,finSubMa	;
-			st.b r9,r22,0			; Se almacena el valor del pixel en la SubImg
+			st.b r9,r22,0		; Se almacena el valor del pixel en la SubImg
 			
 			addu r22,r22,1		; Se avanza el puntero de SubImg
 			subu r8,r8,1		; Decrementamos el contador de elementos cargados
@@ -430,20 +430,20 @@ finSubMa:	POP(r1)
 ;	Valor de salida, VPixel , devuelve el valor que se ha asignado al pixel (i,j).
 ;	Retorno por r29 como un entero sin signo.
 ;	
-;			|  			  |
+;			|  	      |
 ;			|_____________|		
 ;			|  SubImagen  |
-;			|	(12 B)    | <-- r30 - 12
+;			|   (12 B)    | <-- r30 - 12
 ;			|_____________|
-;			|     ...	  |
+;			|     ...     |
 ;			|_____________|
-;			|   Ant.r31	  | <--- r31
+;			|   Ant.r31   | <--- r31
 ;			|_____________|
-;			|   Dir.Ret	  | r31 + 4
+;			|   Dir.Ret   | r31 + 4
 ;			|_____________|
 ;			|  Imagen(Dir)| r31 + 8
 ;			|_____________|
-;	        |   i(Valor)  | r31 + 12
+;	        	|   i(Valor)  | r31 + 12
 ;			|_____________|
 ;			|   j(Valor)  |	r31 + 16
 ;			|_____________|
@@ -484,29 +484,29 @@ FilPixel:	PUSH(r1)
 			ld r22,r31,8		; Imagen
 			ld r23,r31,20		; MFiltro
 
-			PUSH(r23)			; Se carga MFiltro para su uso en ValorPixel
-			PUSH(r3)			; Se carga j (1 byte)
-			PUSH(r2)			; Se carga i (1 byte)
-			PUSH(r21)			; Se carga direccion reservada para Subimagen (4 bytes)
-			PUSH(r22)			; Se carga Imagen (4 bytes)
+			PUSH(r23)		; Se carga MFiltro para su uso en ValorPixel
+			PUSH(r3)		; Se carga j (1 byte)
+			PUSH(r2)		; Se carga i (1 byte)
+			PUSH(r21)		; Se carga direccion reservada para Subimagen (4 bytes)
+			PUSH(r22)		; Se carga Imagen (4 bytes)
 			bsr	SubMatriz
 			POP(r22)
 			POP(r21)
 			POP(r2)
 			POP(r3)
 						
-			PUSH(r21)			; Se carga direccion reservada para Subimagen (4 bytes)
+			PUSH(r21)		; Se carga direccion reservada para Subimagen (4 bytes)
 			bsr ValorPixel
 			POP(r21)
 			POP(r23)
 
-			or r2,r0,9			; Contador de los 9 elementos
+			or r2,r0,9		; Contador de los 9 elementos
 			or r3,r0,r0 		; peso del filtro
 
 sumMFiltro:	cmp r7,r2,0
 			bb1 eq,r7,calcularVP	
 
-			ld r4,r23,0			; Cargamos el valor del puntero de MFiltro
+			ld r4,r23,0		; Cargamos el valor del puntero de MFiltro
 			add r3,r3,r4
 
 			addu r23,r23,4		; Avanzamos el puntero
@@ -523,11 +523,11 @@ calcularVP:	cmp r7,r3,r0
 			
 			cmp r7,r2,255		; Si es superior el valor 255, se ajusta a este mismo valor
 			bb1 ge,r7,ajustar255;
-			cmp r7,r2,0			; Si es inferior al valor 0, se ajusta a este mismo valor
+			cmp r7,r2,0		; Si es inferior al valor 0, se ajusta a este mismo valor
 			bb1 le,r7,ajustar0
 			br finFilPixel		; ecc se carga en r29 y se devuelve el control al programa llamante
 
-ajustar255:	or r2,r0,255		; Se ajusta el valor del pixel a 255
+ajustar255:	or r2,r0,255			; Se ajusta el valor del pixel a 255
 			br finFilPixel
 ajustar0:	or r2,r0,0			; Se ajusta el valor del pixel a 0
 
@@ -540,7 +540,7 @@ finFilPixel:
 
 
 ;-----------------------------------------------------------------------------------------;
-;										FILTRO
+;				       FILTRO                                             ;
 ;-----------------------------------------------------------------------------------------;
 ; Filtro (Imagen, ImFiltrada, MFiltro)
 ;		
@@ -641,7 +641,7 @@ bucle_N:	cmp r7,r5,r3 		; ¿j == N?
 
 			br bucle_N
 
-bucle_M:	addu r4,r4,1 		; i++
+bucle_M:	addu r4,r4,1 			; i++
 			cmp r7,r4,r2 		; ¿i == M?
 			bb1 eq,r7,finFiltro
 
@@ -700,21 +700,21 @@ finFiltro:
 ;				FiltRec (ImagenTMP,ImagenOut,MFiltro,ModMFiltro,NCambios)
 ;			8. Devolverá el control al programa llamante.
 ;
-;			| 			  |
+;			| 	      |
 ;			|_____________|
 ;			|  ImagenTMP  | <--- r30
 ;			|_____________|
-;			| 	  ...	  |
+;			|      ...    |
 ;			|_____________|
-;			|   Ant.r31	  | <--- r31
+;			|   Ant.r31   | <--- r31
 ;			|_____________|
-;			|   Dir.Ret	  | r31 + 4
+;			|   Dir.Ret   | r31 + 4
 ;			|_____________|
 ;			|   ImagenIn  | r31 + 8
-;			|	 (Dir)    | 
+;			|    (Dir)    | 
 ;			|_____________|
 ;			|  ImagenOut  | r31 + 12
-;			|	 (Dir)	  |	
+;			|    (Dir)    |	
 ;			|_____________|
 ;			| MFiltro(Dir)| r31 + 16
 ;			|_____________|
@@ -915,7 +915,7 @@ finFiltRec:	or r30,r31,r0
 
 
 ;-----------------------------------------------------------------------------------------;
-;									Variables para pruebas
+;				Variables para pruebas                                    ;
 ;-----------------------------------------------------------------------------------------;
 
 org 80000
@@ -938,28 +938,28 @@ oper6:		data -1
 ; ActualizaFiltro(MFiltro, ModMFiltro)
 
 MATRIZFILTRO1: 
-			data 1,2,3
-			 	,4,5,6
-			 	,7,8,9
+			data  1,2,3
+			     ,4,5,6
+			     ,7,8,9
 NumDem1: 	data 4,2
 
 MATRIZFILTRO2: 	
-			data 2,4,1
-				,3,5,7
-				,6,8,9
+			data  2,4,1
+			     ,3,5,7
+			     ,6,8,9
 NumDem2: 	data 2,4
 
 MATRIZFILTRO3: 
-			data 4,5,6
-			 	,7,8,9
-			 	,1,2,3
+			data  4,5,6
+			     ,7,8,9
+			     ,1,2,3
 NumDem3: 	data 1,2
 
 
 MATRIZFILTRO4: 
 			data 4,5,6
-			 	,7,8,9
-			 	,1,2,3
+			    ,7,8,9
+			    ,1,2,3
 NumDem4: 	data 0,2
 ;***************************************
 ; Datos para COMP
@@ -967,13 +967,13 @@ NumDem4: 	data 0,2
 ; diferencia = Comp ( Imagen1, Imagen2)
 
 ; IMG1  -->	|1 2 3|
-;			|4 5 6|
-;			|7 8 9|
+;		|4 5 6|
+;		|7 8 9|
 
 
 ; IMG2  -->	|9 8 7|
-;			|6 5 4|
-;			|3 2 1|
+;		|6 5 4|
+;		|3 2 1|
 
 IMG1: 		data 3,3,0x04030201,0x08070605,0x00000009
 IMG2: 		data 3,3,0x06070809,0x02030405,0x00000001
@@ -981,12 +981,12 @@ IMG2: 		data 3,3,0x06070809,0x02030405,0x00000001
 		;---------------------------;
 
 ; IMG3  -->	|4 3|
-;			|2 1|
+;		|2 1|
 
 ; IMG4  -->	|1 2|
-;			|3 4|
-;			|1 2|
-;			|3 4|
+;		|3 4|
+;		|1 2|
+;		|3 4|
 
 IMG3: 		data 2,2,0x01020304
 IMG4: 		data 4,2,0x04030201,0x04030201
@@ -997,35 +997,35 @@ IMG4: 		data 4,2,0x04030201,0x04030201
 ; VPixel = ValorPixel (SubImg , MFiltro)
 ;
 ;
-; MFiltro1 -->| 1 1 1 |
-;			  | 1 0 1 |
-; 			  | 1 1 1 |
+; MFiltro1 --> | 1 1 1 |
+;	       | 1 0 1 |
+; 	       | 1 1 1 |
 ;
 ; SubImg1 -->| 1 2 3 |
-;			 | 4 5 6 |
-;      		 | 7 8 9 |
+;	     | 4 5 6 |
+;      	     | 7 8 9 |
 ;
 
 MFiltro1: 	data 1,1,1,
-			 	 1,0,1,
-			 	 1,1,1
+		     1,0,1,
+		     1,1,1
 
 SubImg1:	data 0x04030201,0x08070605,0x00000009
 		
 		;---------------------------;
 
-; MFiltro2 -->| 0 0 0 |
-;			  | 0 1 0 |
-; 			  | 0 0 0 |
+; MFiltro2 --> | 0 0 0 |
+;	       | 0 1 0 |
+; 	       | 0 0 0 |
 ;
-; SubImg2 -->| 0 0  0 |
-;			 | 0 55 0 |
-;      		 | 0 0  0 |
+; SubImg2 --> | 0 0  0 |
+;	      | 0 55 0 |
+;      	      | 0 0  0 |
 ;
 
 MFiltro2: 	data 0,0,0,
-			 	 0,1,0,
-			 	 0,0,0
+		     0,1,0,
+		     0,0,0
 
 SubImg2:	data 0x00000000,0x00000055,0x00
 
@@ -1033,18 +1033,18 @@ SubImg2:	data 0x00000000,0x00000055,0x00
 		
 		;---------------------------;
 
-; MFiltro3 -->| 0   0  0 |
-;			  | 0 -254 0 |
-; 			  | 0   0  0 |
+; MFiltro3 --> | 0   0  0 |
+;	       | 0 -254 0 |
+; 	       | 0   0  0 |
 ;
-; SubImg3 -->| 0 0  0 |
-;			 | 0 55 0 |
-;      		 | 0 0  0 |
+; SubImg3 --> | 0 0  0 |
+;             | 0 55 0 |
+;      	      | 0 0  0 |
 ;
 
 MFiltro3: 	data 0,0,0,
-			 	 0,0xFFFFFFFE,0,
-			 	 0,0,0
+		     0,0xFFFFFFFE,0,
+		     0,0,0
 
 SubImg3:	data 0x00000000,0x00000055,0x00
 
@@ -1052,13 +1052,13 @@ SubImg3:	data 0x00000000,0x00000055,0x00
 		
 		;---------------------------;
 
-; MFiltro4 -->| -254 -254 -254 |
-;			  | -254   0  -254 |
-; 			  | -254 -254 -254 |
+; MFiltro4 --> | -254 -254 -254 |
+;	       | -254   0  -254 |
+;              | -254 -254 -254 |
 ;
-; SubImg4 -->| 10 11 12|
-;			 | 13 14 15|
-;      		 | 16 17 18|
+; SubImg4 --> | 10 11 12|
+;	      | 13 14 15|
+;      	      | 16 17 18|
 ;
 
 MFiltro4: 	data 0xFFFFFFFE,0xFFFFFFFE,0xFFFFFFFE,
@@ -1076,20 +1076,20 @@ SubImg4:	data 0x13121110,0x17161514,0x18
 ; SubMatriz ( Imagen, SubImg, i ,j)
 ;
 ;
-; SubMaImagen1  -->| 1 2 3 |
-;			 	   | 4 5 6 |
-;      		  	   | 7 8 9 |
+; SubMaImagen1  --> | 1 2 3 |
+;		    | 4 5 6 |
+;      		    | 7 8 9 |
 
-; SubMaSubImg1  -->| 0 0 0 |
-;			  	   | 0 0 0 |
-;      		       | 0 0 0 |
+; SubMaSubImg1  --> | 0 0 0 |
+;		    | 0 0 0 |
+;      		    | 0 0 0 |
 ;
 ; i y j van desde 0 hasta X
 
 SubMaImagen1: 		data 3,3,0x04030201,0x08070605,0x00000009
 SubMaSubImg1:	data 0,0,0
-					,0,0,0
-					,0,0,0
+		    ,0,0,0
+		   ,0,0,0
 
 ; La posicion [1,2] corresponde al 6
 
@@ -1098,21 +1098,21 @@ j1:				data 1
 
 		;---------------------------;
 
-; SubMaImagen2  -->| 1 2 3 4 5 |
-;			  	   | 2 6 7 8 4 |
-;             	   | 3 7 9 7 3 |
-;			  	   | 4 8 7 6 2 |
-;            	   | 5 4 3 2 1 |
+; SubMaImagen2  --> | 1 2 3 4 5 |
+;		    | 2 6 7 8 4 |
+;             	    | 3 7 9 7 3 |
+;	   	    | 4 8 7 6 2 |
+;            	    | 5 4 3 2 1 |
 
 ;
-; SubMaSubImg2  -->| 1 1 1 |
-;			       | 1 0 1 |
-;      		       | 1 1 1 |
+; SubMaSubImg2  --> | 1 1 1 |
+;		    | 1 0 1 |
+;      		    | 1 1 1 |
 
-SubMaImagen2: 		data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
+SubMaImagen2: 	data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
 SubMaSubImg2:	data 1,1,1
-					,1,0,1
-					,1,1,1
+		    ,1,0,1
+	            ,1,1,1
 
 ; La posicion [2,2] corresponde al 9
 
@@ -1121,21 +1121,21 @@ j2: 		data 2
 
 		;---------------------------;
 
-; SubMaImagen3  -->| 1 2 3 4 5 |
-;			  	   | 2 6 7 8 4 |
-;                  | 3 7 9 7 3 |
-;			       | 4 8 7 6 2 |
-;                  | 5 4 3 2 1 |
+; SubMaImagen3  --> | 1 2 3 4 5 |
+;	            | 2 6 7 8 4 |
+;                   | 3 7 9 7 3 |
+;		    | 4 8 7 6 2 |
+;                   | 5 4 3 2 1 |
 
 ;
-; SubMaSubImg3  -->| 1 1 1 |
-;			       | 1 0 1 |
-;      		       | 1 1 1 |
+; SubMaSubImg3  --> | 1 1 1 |
+;	            | 1 0 1 |
+;      		    | 1 1 1 |
 
-SubMaImagen3: 		data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
+SubMaImagen3:   data 5,5,0x04030201,0x07060205,0x07030408,0x04030709,0x02060708,0x02030405,0x00000001
 SubMaSubImg3:	data 1,1,1
-					,1,0,1
-					,1,1,1
+		    ,1,0,1
+	            ,1,1,1
 
 ; La posicion [3,3] corresponde al 9
 
@@ -1144,14 +1144,14 @@ j3: 		data 3
 
 		;---------------------------;
 
-; SubMaImagen4  -->| 10 20 30 |
-;			  	   | 40 50 60 |
-;      		 	   | 70 80 90 |  
+; SubMaImagen4  --> | 10 20 30 |
+;		    | 40 50 60 |
+;      		    | 70 80 90 |  
 
 ;
-; SubMaSubImg4  -->| -1 -1 -1 |
-;			       | -1 -1 -1 |
-;      		       | -1 -1 -1 |
+; SubMaSubImg4  --> | -1 -1 -1 |
+;		    | -1 -1 -1 |
+;      		    | -1 -1 -1 |
 
 SubMaImagen4: data 3,3, 0x40302010, 0x08070605, 0x90
 SubMaSubImg4: data 0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF
@@ -1165,15 +1165,15 @@ j4: 		data 1
 
 		;---------------------------;
 
-; SubMaImagen5  -->| 01 02 03 04 05 |
-;			  	   | 06 07 08 09 0A |
-;      		 	   | 0B 0C 0D 0E 0F |  
-;				   | 10 11 12 13 14 |
-;				   | 15 16 17 18 19 |	
+; SubMaImagen5  --> | 01 02 03 04 05 |
+;		    | 06 07 08 09 0A |
+;      		    | 0B 0C 0D 0E 0F |  
+;		    | 10 11 12 13 14 |
+;		    | 15 16 17 18 19 |	
 ;
-; SubMaSubImg5  -->| -1 -1 -1 |
-;			       | -1 -1 -1 |
-;      		       | -1 -1 -1 |     		       
+; SubMaSubImg5  --> | -1 -1 -1 |
+;		    | -1 -1 -1 |
+;      		    | -1 -1 -1 |     		       
 ;
 ;
 SubMaImagen5: data 5,5, 0x04030201, 0x08070605, 0x0C0B0A09,0x100F0E0D,0x14131211,0x18171615,0x19
@@ -1188,15 +1188,15 @@ j5: 		data 4
 
 		;---------------------------;
 
-; SubMaImagen6  -->|  1  2  3  4  5  6  7  8|
-;			  	   |  9 10 11 12 13 14 15 16|
-;      		 	   | 17 18 19 20 21 22 23 24|  
-;				   | 25 26 27 28 29 30 31 32|
-;				   | 33 34 35 36 37 38 39 40|	
+; SubMaImagen6  --> |  1  2  3  4  5  6  7  8|
+;		    |  9 10 11 12 13 14 15 16|
+;      		    | 17 18 19 20 21 22 23 24|  
+;		    | 25 26 27 28 29 30 31 32|
+;		    | 33 34 35 36 37 38 39 40|	
 ;
-; SubMaSubImg6  -->| -1 -1 -1 |
-;			       | -1 -1 -1 |
-;      		       | -1 -1 -1 |     		       
+; SubMaSubImg6  --> | -1 -1 -1 |
+;		    | -1 -1 -1 |
+;      		    | -1 -1 -1 |     		       
 ;
 ;
 
@@ -1213,15 +1213,15 @@ j6: 		data 2
 
 		;---------------------------;
 
-; SubMaImagen7  -->|  1  2  3  4  5  6  7  8|
-;			  	   |  9 10 11 12 13 14 15 16|
-;      		 	   | 17 18 19 20 21 22 23 24|  
-;				   | 25 26 27 28 29 30 31 32|
-;				   | 33 34 35 36 37 38 39 40|	
+; SubMaImagen7  --> |  1  2  3  4  5  6  7  8|
+;		    |  9 10 11 12 13 14 15 16|
+;      		    | 17 18 19 20 21 22 23 24|  
+;		    | 25 26 27 28 29 30 31 32|
+;		    | 33 34 35 36 37 38 39 40|	
 ;
-; SubMaSubImg7  -->| -1 -1 -1 |
-;			       | -1 -1 -1 |
-;      		       | -1 -1 -1 |     		       
+; SubMaSubImg7  --> | -1 -1 -1 |
+;		    | -1 -1 -1 |
+;      		    | -1 -1 -1 |     		       
 ;
 ;
 
@@ -1238,15 +1238,15 @@ j7: 		data 5
 
 		;---------------------------;
 
-; SubMaImagen8  -->|  1  2  3  4  5  6  7  8|
-;			  	   |  9 10 11 12 13 14 15 16|
-;      		 	   | 17 18 19 20 21 22 23 24|  
-;				   | 25 26 27 28 29 30 31 32|
-;				   | 33 34 35 36 37 38 39 40|	
+; SubMaImagen8  --> |  1  2  3  4  5  6  7  8|
+;		    |  9 10 11 12 13 14 15 16|
+;      		    | 17 18 19 20 21 22 23 24|  
+;		    | 25 26 27 28 29 30 31 32|
+;		    | 33 34 35 36 37 38 39 40|	
 ;
-; SubMaSubImg8  -->| -1 -1 -1 |
-;			       | -1 -1 -1 |
-;      		       | -1 -1 -1 |     		       
+; SubMaSubImg8  --> | -1 -1 -1 |
+;		    | -1 -1 -1 |
+;      		    | -1 -1 -1 |     		       
 ;
 ;
 
@@ -1269,8 +1269,8 @@ j8: 		data 7
 
 FilPImagen1:  data 3,3,0x04030201,0x08070605,0x00000009
 FilPMFiltro1: data 1,1,1,
-			 	   1,0,1,
-			 	   1,1,1
+		   1,0,1,
+		   1,1,1
 
 ; La posicion [1,2] corresponde al 6
 
@@ -1283,8 +1283,8 @@ FilPj1:		data 2
 FilPImagen2:  data 5,5,0x44332211, 0x03020155, 0x22210504,0x31252423,
 					0x35343332,0x44434241,0x00000045
 FilPMFiltro2: data 0,0,0,
-			 	   0,1,0,
-			 	   0,0,0
+		   0,1,0,
+		   0,0,0
 
 ; La posicion [3,2] corresponde al 24
 
@@ -1296,8 +1296,8 @@ FilPj2:		data 3
 FilPImagen3:  data 4,8,0x44444444, 0x44444444, 0x33343444,0x44444444,
 					0x44884444,0x44444444,0x44444444,0x44444444
 FilPMFiltro3: data 1,1,1,
-			 	   1,0,1,
-			 	   1,1,1
+		   1,0,1,
+		   1,1,1
 
 ; La posicion [2,2] corresponde al 88
 
@@ -1311,8 +1311,8 @@ FilPImagen4:  data 4,8, 0x40414243,0x44454647,0x48494A4B,0x4C4D4E4F,
 					0x40004243,0x44454647,0x48494A4B,0x4C4D4E4F
 
 FilPMFiltro4: data 1,1,1,
-			 	   1,-8,1,
-			 	   1,1,1
+		   1,-8,1,
+		   1,1,1
 
 ; La posicion [2,2] corresponde al 4A = 74
 
@@ -1325,8 +1325,8 @@ FilPImagen5:  data 4,8, 0x40302010,0x80706050,0x44332211,0x88776655,
 						0x44554455,0x44554455,0x50607080,0x10203040
 
 FilPMFiltro5: data 1,0,-1,
-			 	   2,1,-2,
-			 	   1,0,-3
+		   2,1,-2,
+		   1,0,-3
 
 ; La posicion [1,1] corresponde al 22
 
@@ -1341,8 +1341,8 @@ FilPImagen6:  data 4,8, 0x40302010,0x80706050,0x44332211,0x88776655,
 						0x44554455,0x44554455,0x50607080,0x10203040
 
 FilPMFiltro6: data 2,2,2,
-			 	   2,2,2,
-			 	   2,2,2
+		   2,2,2,
+		   2,2,2
 
 ; La posicion [3,0] corresponde al 80
 
@@ -1358,8 +1358,8 @@ FilPImagen7:  data 4,8, 0x40302010,0xFF706050,0x44332211,0x88776655,
 						0x44554455,0x44554455,0x506070FF,0x10203040
 
 FilPMFiltro7: data 1,0,1,
-			 	   1,0,1,
-			 	   1,0,1
+		   1,0,1,
+		   1,0,1
 
 ; La posicion [3,0] corresponde al FF
 
@@ -1381,8 +1381,8 @@ filtroImagen1: 	data 4,8,0x04030201,0x07060504,0x14134211,0x17168514,
 filtroFilt1: 	res 40
 
 filtroFiltro1:	data 0,-3,0,
-					 0,4,0,
-					 0,0,0	
+		      0,4,0,
+		      0,0,0	
 
 		;---------------------------;
 
@@ -1393,8 +1393,8 @@ filtroFilt2: 	data 0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,
 				  0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5
 
 filtroFiltro2:	data -2,0,-2,
-					  0,0,0,
-					 -2,0,-2	
+		       0,0,0,
+		      -2,0,-2	
 
 		;---------------------------;
 
@@ -1405,8 +1405,8 @@ filtroFilt3: 	data 0x00000000,0x00000000,0x01020304,0x05060102,
 				  0x03040506,0x01020304,0x05060102,0x03040506
 
 filtroFiltro3:	data 0,0,0,
-					 0,1,0,
-					 0,0,0	
+		     0,1,0,
+		      0,0,0	
 
 		;---------------------------;
 
@@ -1417,8 +1417,8 @@ filtroFilt4: 	data 0x00000000,0x00000000,0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,
 					0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5,0xA5A5A5A5
 
 filtroFiltro4:	data 0,0,0,
-					 1,1,1,
-					 0,0,0		
+		     1,1,1,
+		     0,0,0		
 
 		;---------------------------;		
 
@@ -1428,8 +1428,8 @@ filtroImagen5: 	data 2,2,0x04030201
 filtroFilt5: 	data 0xFFFFFFFF
 
 filtroFiltro5:	data 0,-3,0,
-					 0,4,0,
-					 0,0,0			 	
+		      0,4,0,
+		      0,0,0			 	
 
 ;***************************************
 ;Datos para FiltRec
@@ -1442,8 +1442,8 @@ filtRecModM1:
 			data 1,1
 filtRecFiltro1:
 			data 1,1,1,
-				 1,0,1,
-				 1,1,1
+			     1,0,1,
+			     1,1,1
 filtRfiltra1: res 24
 			data 0xAAAAAAAA,0xAAAAAAAA
 
@@ -1455,8 +1455,8 @@ filtRecModM2:
 			data 1,2
 filtRecFiltro2:
 			data 10,10,10,
-				 10,0,10,
-				 10,10,10
+			     10,0,10,
+			     10,10,10
 filtRfiltra2: res 24
 			data 0xAAAAAAAA,0xAAAAAAAA
 
@@ -1469,8 +1469,8 @@ filtRecModM3:
 			data 9,10
 filtRecFiltro3:
 			data  0,20, 0,
-				 20, 0,20,
-				  0,20, 0
+			      20, 0,20,
+			       0,20, 0
 filtRfiltra3: res 36
 			data 0xAAAAAAAA,0xAAAAAAAA		
 
@@ -1486,7 +1486,7 @@ filtRfiltra3: res 36
 ;*****************************************************************************************;
 
 ;-----------------------------------------------------------------------------------------;
-;										PPAL y Tests
+;				PPAL y Tests                                              ;
 ;-----------------------------------------------------------------------------------------;
 
 org 40000
